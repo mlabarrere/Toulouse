@@ -1,7 +1,7 @@
 import random
 from typing import List, Union
 import numpy as np
-from .cards import Card, SUITS
+from .cards import Card
 
 class Deck:
     """

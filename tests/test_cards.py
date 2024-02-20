@@ -52,3 +52,43 @@ def test_card_greater_than():
     card1 = Card(9, 0)  # 9 of Spades
     card2 = Card(5, 3)  # 5 of Clubs
     assert card1 > card2
+
+@pytest.mark.parametrize("value, suit, deck_size, language, expected_str", [
+    (1, 0, 52, 'en', "Ace of Spades"),
+    (11, 1, 52, 'fr', "Valet de Cœurs"),
+    (12, 2, 40, 'es', "Reina de Diamantes"),
+    (13, 3, 32, 'it', "Re di Fiori"),
+    (10, 0, 52, 'de', "10 von Pik"),
+])
+def test_card_initialization_extended(value, suit, deck_size, language, expected_str):
+    """Test if a Card object is initialized with the correct attributes and string representation in various languages."""
+    card = Card(value, suit, deck_size, language)
+    assert card.value == value
+    assert card.suit == suit
+    assert card.deck_size == deck_size
+    assert card.language == language
+    assert str(card) == expected_str
+
+@pytest.mark.parametrize("values, suits, result", [
+    ((10, 10), (2, 2), True),
+    ((1, 13), (0, 0), False),
+    ((11, 11), (3, 1), False),
+    ((7, 7), (2, 2), True),
+])
+def test_card_equality_extended(values, suits, result):
+    """Test equality between various Card objects."""
+    card1 = Card(values[0], suits[0])
+    card2 = Card(values[1], suits[1])
+    assert (card1 == card2) is result
+
+@pytest.mark.parametrize("card1_details, card2_details, expected_result", [
+    ((10, 2), (3, 1), 13),
+    ((5, 0), (5, 3), 10),
+    ((11, 1), (2, 2), 13),
+    ((8, 3), (4, 0), 12),
+])
+def test_card_addition_extended(card1_details, card2_details, expected_result):
+    """Test adding the values of two cards with varied values."""
+    card1 = Card(*card1_details)
+    card2 = Card(*card2_details)
+    assert card1 + card2 == expected_result
