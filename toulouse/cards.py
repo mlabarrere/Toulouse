@@ -57,7 +57,14 @@ class Card:
         """Return a human-readable string representation of the card in the specified language."""
         value_str = SPECIAL_VALUES[self.language].get(self.value, str(self.value))
         suit_str = SUITS[self.language][self.suit] if self.suit < len(SUITS[self.language]) else "Unknown Suit"
-        return f"{value_str} of {suit_str}"
+        # Use the language to determine the format of the string
+        if self.language == 'en':
+            return f"{value_str} of {suit_str}"
+        elif self.language in ['fr', 'es', 'it', 'de']:
+            return f"{value_str} von {suit_str}" if self.language == 'de' else f"{value_str} di {suit_str}" if self.language == 'it' else f"{value_str} de {suit_str}"
+        else:
+            # Default to English if language not supported
+            return f"{value_str} of {suit_str}"
 
     def __repr__(self) -> str:
         """Return an official string representation of the card."""
