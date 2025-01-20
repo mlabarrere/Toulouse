@@ -11,7 +11,7 @@ setup(
     description='A Python Package for Card Games and Machine Learning',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/Poloche-AI/Toulouse',
+    url='https://github.com/mlabarrere/Toulouse',
     packages=find_packages(),
     install_requires=[
         'numpy',
