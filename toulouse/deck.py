@@ -28,6 +28,10 @@ class Deck:
     def contains(self, card: Card) -> bool:
         return card in self.cards
 
+    def move_card_to(self, card: Card, other_deck: 'Deck'):
+        self.remove_card(card)
+        other_deck.add_card(card)
+
     def reset(self):
         self.cards = [Card(value=v, suit=s) for s in range(len(SUITS)) for v in VALUES]
 
