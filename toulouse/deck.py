@@ -1,7 +1,7 @@
 import random
 import numpy as np
 from typing import List
-from cards import Card, SUITS, VALUES, DECK_SIZE
+from toulouse.cards import Card, SUITS, VALUES, DECK_SIZE
 
 class Deck:
     def __init__(self, new: bool = True, shuffle: bool = False):
