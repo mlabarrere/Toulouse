@@ -1,7 +1,7 @@
-import unittest
+import pytest
 import numpy as np
-from cards import Card, DECK_SIZE
-from deck import Deck
+from toulouse.cards import Card, DECK_SIZE
+from toulouse.deck import Deck
 
 class TestCardDeckSystem(unittest.TestCase):
     def test_card_index_and_array(self):
