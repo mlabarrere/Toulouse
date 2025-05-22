@@ -5,11 +5,11 @@ from .cards import Card, CARD_SYSTEMS # Import Card class and CARD_SYSTEMS defin
 
 class Deck:
     """
-    Represents a deck of cards, adaptable to different card game systems.
+    Represents a deck of cards, primarily designed for the "italian_40" card system.
     
-    The Deck class can create standard 52-card decks, Italian 40-card decks, or potentially
-    other systems defined in CARD_SYSTEMS. It handles card creation, shuffling, drawing,
-    and state representation based on the specified card system.
+    The Deck class handles card creation for a full deck, shuffling, drawing,
+    and state representation based on the "italian_40" system defined in CARD_SYSTEMS.
+    While the underlying structure could support other systems, the current focus is singular.
 
     Attributes:
         cards (List[Card]): A list of Card objects currently in the deck.
@@ -29,29 +29,22 @@ class Deck:
                  cards: Union[List[Card], None] = None,
                  new: bool = False,
                  sorted_deck: bool = True, # Parameter name changed from 'sorted'
-                 card_system_key: str = 'standard_52', 
                  language: str = 'en'
                  ) -> None:
-        """Initializes a Deck instance.
+        """Initializes a Deck instance. The card system is fixed to "italian_40".
 
         Args:
             cards (Union[List[Card], None], optional): A list of Card objects to populate the deck.
                 If None, the deck is empty unless `new` is True. Defaults to None.
-                If provided, these cards should ideally match the `card_system_key` and `language`
-                of the deck, though the deck's language will be set on these cards.
-            new (bool, optional): If True, a full new deck of cards is generated based on the
-                `card_system_key`. Defaults to False.
-            sorted_deck (bool, optional): Determines if the deck should be sorted initially and
-                after operations. Defaults to True.
-            card_system_key (str, optional): The key identifying the card system to use
-                (e.g., 'standard_52', 'italian_40'). This dictates the types of cards,
-                deck size, etc. Defaults to 'standard_52'.
-            language (str, optional): The language for card string representations. Defaults to 'en'.
+            new (bool, optional): If True, a full new deck of "italian_40" cards is generated.
+                Defaults to False.
+            sorted_deck (bool, optional): Determines if the deck should be sorted initially (True)
+                or shuffled (False). Defaults to True.
+            language (str, optional): The language for card string representations, primarily for
+                cards created when `new=True`. Defaults to 'en'.
         """
-        self.card_system_key = card_system_key
-        # Validate and load the specified card system's properties.
-        if self.card_system_key not in CARD_SYSTEMS:
-            raise ValueError(f"Unknown card system key: {self.card_system_key}")
+        self.card_system_key = "italian_40" # Hardcoded card system
+        # Load the card system properties (always "italian_40")
         self.card_system = CARD_SYSTEMS[self.card_system_key]
         
         self.language = language # Sets the default language for cards in this deck.
@@ -65,9 +58,8 @@ class Deck:
             # Iterate through each suit and each value defined in the system's values_map.
             for suit_idx in range(num_suits):
                 for value in values_map:
-                    self.cards.append(Card(value=value, suit=suit_idx, 
-                                           card_system_key=self.card_system_key, 
-                                           language=self.language))
+                    # Card() no longer takes card_system_key
+                    self.cards.append(Card(value=value, suit=suit_idx, language=self.language))
         else:
             # Use provided cards or initialize an empty deck.
             self.cards = cards if cards is not None else []
@@ -254,107 +246,109 @@ class Deck:
         return len(self.cards)
 
     @classmethod
-    def from_state(cls, state_array: np.ndarray, card_system_key: str = 'standard_52', language: str = 'en') -> 'Deck':
+    def from_state(cls, state_array: np.ndarray, language: str = 'en') -> 'Deck':
         """
         Class method to create a Deck instance from a binary state array.
-        The state array represents a full deck of a specific system, where '1' indicates
-        a card's presence.
+        The state array represents a full deck of the "italian_40" system, where '1' indicates
+        a card's presence. The card system is fixed to "italian_40".
         
         Args:
             state_array (np.ndarray): The binary state array. Its length must match the
-                                      `deck_size` of the specified `card_system_key`.
-            card_system_key (str, optional): The card system to use for interpreting the state array.
-                                             Defaults to 'standard_52'.
+                                      `deck_size` of the "italian_40" system (40).
             language (str, optional): The language for the cards in the created deck. Defaults to 'en'.
             
         Returns:
             Deck: A new Deck instance populated with cards indicated by the state array.
             
         Raises:
-            ValueError: If `card_system_key` is unknown, or if `state_array` length doesn't match
-                        the system's `deck_size`, or if an index in the state array implies an
-                        invalid card for the system.
+            ValueError: If `state_array` length doesn't match the system's `deck_size`,
+                        or if an index in the state array implies an invalid card for the system.
         """
-        if card_system_key not in CARD_SYSTEMS:
-            raise ValueError(f"Unknown card system key: {card_system_key}")
-        
+        card_system_key = "italian_40" # Hardcoded
         card_system = CARD_SYSTEMS[card_system_key]
         expected_deck_size = card_system["deck_size"]
 
-        # Validate state array length against the chosen card system's deck size.
+        # Validate state array length against the "italian_40" system's deck size.
         if state_array.shape[0] != expected_deck_size:
             raise ValueError(f"State array length {state_array.shape[0]} must match deck size {expected_deck_size} for system '{card_system_key}'.")
 
         cards = []
-        num_values_per_suit = len(card_system["values_map"]) # Number of unique values in a suit for this system.
+        num_values_per_suit = len(card_system["values_map"])
 
-        # Iterate through the state array; each index corresponds to a unique card in the system.
         for i in range(state_array.shape[0]):
-            if state_array[i] == 1: # If the bit is set, this card is in the deck.
-                # Reverse the calculation from Card.calculate_index() to get value and suit.
+            if state_array[i] == 1:
                 suit_idx = i // num_values_per_suit
-                value_map_idx = i % num_values_per_suit # Index within the system's values_map
+                value_map_idx = i % num_values_per_suit
                 
-                # Validate derived suit and value indices before creating the card.
                 if suit_idx >= card_system["num_suits"]:
                      raise ValueError(f"Invalid suit index {suit_idx} derived from state for system '{card_system_key}' at overall index {i}.")
-                if value_map_idx >= len(card_system["values_map"]): # Should not happen if deck_size and num_values_per_suit are consistent
+                if value_map_idx >= len(card_system["values_map"]):
                      raise ValueError(f"Invalid value map index {value_map_idx} derived from state for system '{card_system_key}' at overall index {i}.")
 
-                value = card_system["values_map"][value_map_idx] # Get the actual card value.
-                cards.append(Card(value, suit_idx, card_system_key=card_system_key, language=language))
+                value = card_system["values_map"][value_map_idx]
+                # Card() no longer takes card_system_key
+                cards.append(Card(value, suit_idx, language=language))
         
         # Cards created from state are inherently sorted by their canonical index.
-        return cls(cards=cards, sorted_deck=True, card_system_key=card_system_key, language=language)
+        # Deck() no longer takes card_system_key
+        return cls(cards=cards, sorted_deck=True, language=language)
 
 # Example usage section for quick testing or demonstration.
 if __name__ == '__main__':
-    print("--- Standard 52-card Deck (English) ---")
-    deck_en_std = Deck(new=True, card_system_key='standard_52', language='en', sorted_deck=True)
-    print(f"Deck size: {len(deck_en_std)}")
-    print(f"First 5 cards (sorted): {[str(c) for c in deck_en_std.cards[:5]]}") # Ace of Spades, 2 of Spades, ...
-    drawn_cards_en = deck_en_std.draw(2) # Draws from the "top" (end of list, higher value cards if sorted)
-    print(f"Drawn (from end of sorted list): {[str(c) for c in drawn_cards_en]}") # e.g., King of Clubs, Queen of Clubs
-    print(f"Deck size after draw: {len(deck_en_std)}")
-
     print("\n--- Italian 40-card Deck (Italian, Shuffled) ---")
-    deck_it_shuffled = Deck(new=True, card_system_key='italian_40', language='it', sorted_deck=False) # Shuffled
+    # Deck() no longer takes card_system_key
+    deck_it_shuffled = Deck(new=True, language='it', sorted_deck=False) 
     print(f"Deck size: {len(deck_it_shuffled)}")
     print(f"First 5 cards (shuffled): {[str(c) for c in deck_it_shuffled.cards[:5]]}")
     
     # Test state calculation for a specific Italian card
-    fante_di_denari_it = Card(value=8, suit=0, card_system_key='italian_40', language='it') # Fante di Denari
-    # Italian values_map: [1,2,3,4,5,6,7,8,9,10]. Index of 8 is 7. Suit 0. Index = 7 + 0*10 = 7.
-    print(f"Index of {fante_di_denari_it}: {fante_di_denari_it.calculate_index()}") # Expected: 7
+    # Card() no longer takes card_system_key
+    fante_di_denari_it = Card(value=8, suit=0, language='it') 
+    print(f"Index of {fante_di_denari_it}: {fante_di_denari_it.calculate_index()}")
 
     # Test Deck.from_state for Italian deck
     print("\n--- Deck from State (Italian) ---")
-    state_sample_it = np.zeros(40, dtype=int) # Italian deck size is 40
-    state_sample_it[0] = 1 # Asso di Denari (value 1, suit 0, index 0)
-    state_sample_it[17] = 1 # Fante di Coppe (value 8, suit 1, index 17)
-    state_sample_it[39] = 1 # Re di Bastoni (value 10, suit 3, index 39)
+    state_sample_it = np.zeros(40, dtype=int)
+    state_sample_it[0] = 1 
+    state_sample_it[17] = 1
+    state_sample_it[39] = 1
     
-    deck_from_state_it = Deck.from_state(state_sample_it, card_system_key='italian_40', language='it')
+    # Deck.from_state() no longer takes card_system_key
+    deck_from_state_it = Deck.from_state(state_sample_it, language='it')
     print(f"Deck created from state (Italian): {deck_from_state_it}")
-    print(f"Number of cards in deck from state: {len(deck_from_state_it.cards)}") # Should be 3
+    print(f"Number of cards in deck from state: {len(deck_from_state_it.cards)}")
     for card in deck_from_state_it.cards:
         print(f"  Card: {card}, Index: {card.calculate_index()}")
 
-    # Test adding a card from a different system (should fail)
-    print("\n--- Testing Error Handling ---")
-    try:
-        standard_card_to_add = Card(value=1, suit=0, card_system_key='standard_52')
-        deck_it_shuffled.append(standard_card_to_add)
-    except ValueError as e:
-        print(f"Error (expected) when adding card from different system: {e}")
+    # Test adding a card from a different system (should fail if card_system_key was still a thing in Card)
+    # This test is less relevant now as Card itself is hardcoded to "italian_40".
+    # An attempt to create a Card that *would* be from another system will just be an "italian_40" card.
+    # The check `if card_to_add.card_system_key != self.card_system_key:` in append will always pass.
+    # print("\n--- Testing Error Handling for system mismatch (less relevant now) ---")
+    # try:
+    #     # This card will be created as an "italian_40" card due to hardcoding in Card.__init__
+    #     # standard_card_to_add = Card(value=1, suit=0, language='en') 
+    #     # deck_it_shuffled.append(standard_card_to_add) # This would only fail if Card could have a *different* system_key
+    # except ValueError as e:
+    #     print(f"Error (expected if Card could have other systems): {e}")
+
 
     # Test removing a card not present
+    print("\n--- Testing Error Handling for removing non-existent card ---")
     try:
-        card_not_present = Card(value=2, suit=0, card_system_key='italian_40') # Assume 2 of Denari was drawn or not there
-        # First, ensure it's not there for a clean test
-        if card_not_present in deck_it_shuffled.cards: deck_it_shuffled.remove(card_not_present)
+        # Card() no longer takes card_system_key
+        card_not_present = Card(value=2, suit=0, language='it') 
+        if card_not_present in deck_it_shuffled.cards: # Should not be removed if this is the test case
+             pass # deck_it_shuffled.remove(card_not_present) # Don't remove if we want to test removing non-present
         
-        deck_it_shuffled.remove(card_not_present) # Try to remove it again
+        # Ensure it is indeed not present before trying to remove for the test
+        temp_deck_cards_str = {str(c) for c in deck_it_shuffled.cards}
+        if str(card_not_present) in temp_deck_cards_str:
+            # This means the card *is* in the deck, so the test for "not found" might not trigger as intended
+            # unless we ensure it's a card that truly isn't in the deck (e.g. after drawing all cards)
+            print(f"Warning: Card {card_not_present} is actually in the deck. Test might not behave as expected for 'not found'.")
+
+
+        deck_it_shuffled.remove(card_not_present) # Try to remove it
     except ValueError as e:
-        print(f"Error (expected) when removing card not in deck: {e}")
-```
+        print(f"Error (expected if card truly not in deck): {e}")

@@ -1,7 +1,8 @@
 import numpy as np
 
-# CARD_SYSTEMS defines the properties of different types of card decks.
-# Each key in CARD_SYSTEMS is a string identifier for a card system (e.g., "standard_52", "italian_40").
+# CARD_SYSTEMS defines the properties of card decks.
+# Currently, it is focused on the "italian_40" system, but the structure allows for extension.
+# Each key in CARD_SYSTEMS is a string identifier for a card system (e.g., "italian_40").
 # Each card system is a dictionary with the following keys:
 #   - "suits": A dictionary mapping language codes (e.g., 'en', 'it') to a list of suit names.
 #   - "special_values": A dictionary mapping language codes to a dictionary where keys are numerical card values
@@ -11,25 +12,6 @@ import numpy as np
 #   - "deck_size": The total number of unique cards in a full deck of this system.
 #   - "num_suits": The number of suits in this card system.
 CARD_SYSTEMS = {
-    "standard_52": {
-        "suits": {
-            'en': ["Spades", "Hearts", "Diamonds", "Clubs"],
-            'fr': ["Piques", "Cœurs", "Carreaux", "Trèfles"],
-            'es': ["Espadas", "Corazones", "Diamantes", "Tréboles"],
-            'it': ["Picche", "Cuori", "Quadri", "Fiori"], # Standard Italian names for 52-card deck suits
-            'de': ["Pik", "Herz", "Karo", "Kreuz"]
-        },
-        "special_values": {
-            'en': {1: "Ace", 11: "Jack", 12: "Queen", 13: "King"},
-            'fr': {1: "As", 11: "Valet", 12: "Dame", 13: "Roi"},
-            'es': {1: "As", 11: "Jota", 12: "Reina", 13: "Rey"},
-            'it': {1: "Asso", 11: "Fante", 12: "Regina", 13: "Re"}, # Standard Italian names for 52-card deck special values
-            'de': {1: "Ass", 11: "Bube", 12: "Dame", 13: "König"}
-        },
-        "values_map": list(range(1, 14)),  # Ace (1) to King (13)
-        "deck_size": 52,
-        "num_suits": 4,
-    },
     "italian_40": {
         "suits": { # For Italian 40-card system, only Italian names are most relevant
             'it': ["Denari", "Coppe", "Spade", "Bastoni"],
@@ -56,35 +38,25 @@ LANGUAGE_CONJUNCTIONS = {
 }
 
 class Card:
-    def __init__(self, value: int, suit: int, card_system_key: str = 'standard_52', language: str = 'en') -> None:
-        """Initialize a card with value, suit, card system, and language.
+    def __init__(self, value: int, suit: int, language: str = 'en') -> None:
+        """Initialize a card with value, suit, and language.
+        The card system is fixed to "italian_40".
         
         Args:
-            value: The numerical value of the card. This value's meaning is determined by the
-                   `values_map` of the selected `card_system_key`. For example, in a standard
-                   deck, 1 is Ace, 13 is King. In an Italian 40-card deck, values might be 1-7, 8 (Fante), 
-                   9 (Cavallo), 10 (Re).
-            suit: The index of the suit (e.g., 0 for Spades in a standard deck, or 0 for Denari
-                  in an Italian deck if it's the first suit defined in its system).
-            card_system_key: A string key (e.g., 'standard_52', 'italian_40') that determines the
-                             card's fundamental properties such as its range of possible values and suits,
-                             and how it fits into a deck (e.g., total deck size for binary representation).
-                             This is the primary way to define the type of card.
+            value: The numerical value of the card (1-10 for "italian_40").
+            suit: The index of the suit (0-3 for "italian_40").
             language: A string code (e.g., 'en', 'it') that primarily affects the card's string
-                      representation (e.g., "Ace of Spades" vs "As de Piques"). It does not
-                      change the card's functional value or suit index.
+                      representation. It does not change the card's functional value or suit index.
         """
         self.value = value  # Numerical value of the card
         self.suit = suit    # Numerical suit index of the card
-        self.card_system_key = card_system_key # Identifier for the card system
+        self.card_system_key = "italian_40" # Hardcoded card system
         self.language = language # Language for string representation
 
-        # Validate and load the card system properties
-        if self.card_system_key not in CARD_SYSTEMS:
-            raise ValueError(f"Unknown card system key: {self.card_system_key}")
+        # Load the card system properties (always "italian_40")
         self.card_system = CARD_SYSTEMS[self.card_system_key]
 
-        # Validate value and suit against the selected card system
+        # Validate value and suit against the "italian_40" card system
         if self.value not in self.card_system["values_map"]:
             raise ValueError(f"Value {self.value} is not valid for card system {self.card_system_key}. Valid values: {self.card_system['values_map']}")
         if not (0 <= self.suit < self.card_system["num_suits"]):
@@ -165,18 +137,19 @@ class Card:
 
     def __repr__(self) -> str:
         """Return an official, unambiguous string representation of the card, useful for debugging."""
+        # card_system_key is now hardcoded, so it's less critical to include in repr if space is a concern,
+        # but keeping it for consistency with potential future changes or if other systems were re-added.
         return f"Card(value={self.value}, suit={self.suit}, card_system_key='{self.card_system_key}', language='{self.language}')"
 
     def __eq__(self, other) -> bool:
         """Check if two cards are equal.
-        Equality is based on having the same value, suit, AND being part of the same card system.
-        A card from a 'standard_52' system is never equal to a card from an 'italian_40' system,
-        even if their numerical value and suit index happen to be the same.
+        Equality is based on having the same value and suit.
+        The card system is implicitly "italian_40" for all Card objects.
         """
         return isinstance(other, Card) and \
                self.value == other.value and \
                self.suit == other.suit and \
-               self.card_system_key == other.card_system_key
+               self.card_system_key == other.card_system_key # Still good to check, though it will always be "italian_40"
 
     def __add__(self, other) -> int:
         """Allow adding the numerical values of two cards.
@@ -188,10 +161,11 @@ class Card:
     def __lt__(self, other) -> bool:
         """Check if this card is less than another card.
         Comparison is primarily based on numerical value. If values are equal, suit index acts as a tie-breaker.
-        Cards must be from the same card system to be comparable.
+        Cards are implicitly from the same "italian_40" system.
         """
-        if not isinstance(other, Card) or self.card_system_key != other.card_system_key:
-            return NotImplemented # Cannot compare cards from different systems
+        if not isinstance(other, Card): # Check if other is a Card instance
+            return NotImplemented
+        # self.card_system_key == other.card_system_key will always be true if both are Card instances
         if self.value == other.value:
             return self.suit < other.suit # Suit index as tie-breaker
         return self.value < other.value
@@ -199,87 +173,70 @@ class Card:
     def __gt__(self, other) -> bool:
         """Check if this card is greater than another card.
         Comparison is primarily based on numerical value. If values are equal, suit index acts as a tie-breaker.
-        Cards must be from the same card system to be comparable.
+        Cards are implicitly from the same "italian_40" system.
         """
-        if not isinstance(other, Card) or self.card_system_key != other.card_system_key:
-            return NotImplemented # Cannot compare cards from different systems
+        if not isinstance(other, Card): # Check if other is a Card instance
+            return NotImplemented
+        # self.card_system_key == other.card_system_key will always be true
         if self.value == other.value:
             return self.suit > other.suit # Suit index as tie-breaker
         return self.value > other.value
 
     def __hash__(self) -> int:
         """Return a hash value for the card.
-        The hash is based on the card's value, suit, and its card system key, ensuring that
-        cards that are considered equal (by `__eq__`) have the same hash.
+        The hash is based on the card's value, suit, and its card system key ("italian_40").
+        This ensures that cards that are considered equal (by `__eq__`) have the same hash.
         """
-        return hash((self.value, self.suit, self.card_system_key))
+        return hash((self.value, self.suit, self.card_system_key)) # card_system_key is always "italian_40"
 
 # Example usage section for quick testing or demonstration.
 # This part is typically not run when the module is imported elsewhere.
 if __name__ == '__main__':
-    # Standard 52-card examples
-    ace_of_spades_en = Card(value=1, suit=0, card_system_key='standard_52', language='en')
-    print(f"English: {ace_of_spades_en} (Index: {ace_of_spades_en.calculate_index()})") # Expected: Ace of Spades, Index: 0
+    # Italian 40-card examples (card_system_key is no longer passed)
+    asso_di_denari_it = Card(value=1, suit=0, language='it')
+    print(f"Italian 40-card: {asso_di_denari_it} (Index: {asso_di_denari_it.calculate_index()})")
 
-    as_de_pique_fr = Card(value=1, suit=0, card_system_key='standard_52', language='fr')
-    print(f"French: {as_de_pique_fr} (Index: {as_de_pique_fr.calculate_index()})") # Expected: As de Piques, Index: 0
-
-    # Italian 40-card examples
-    asso_di_denari_it = Card(value=1, suit=0, card_system_key='italian_40', language='it')
-    print(f"Italian 40-card: {asso_di_denari_it} (Index: {asso_di_denari_it.calculate_index()})") # Expected: Asso di Denari, Index: 0 (value 1 is 1st in values_map)
-
-    fante_di_coppe_it = Card(value=8, suit=1, card_system_key='italian_40', language='it') # Fante (value 8) di Coppe (suit 1)
-    # Italian values_map: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]. Index of 8 is 7.
-    # Index = 7 (value_idx) + 1 (suit_idx) * 10 (num_values_per_suit) = 17
-    print(f"Italian 40-card: {fante_di_coppe_it} (Index: {fante_di_coppe_it.calculate_index()})") # Expected: Fante di Coppe, Index: 17
+    fante_di_coppe_it = Card(value=8, suit=1, language='it') # Fante (value 8) di Coppe (suit 1)
+    print(f"Italian 40-card: {fante_di_coppe_it} (Index: {fante_di_coppe_it.calculate_index()})")
 
     # Test state property
-    print(f"State for {ace_of_spades_en} (len {len(ace_of_spades_en.state)}): {ace_of_spades_en.state.argmax()}") # Should be 1 at index 0
-    print(f"State for {asso_di_denari_it} (len {len(asso_di_denari_it.state)}): {asso_di_denari_it.state.argmax()}") # Should be 1 at index 0
+    print(f"State for {asso_di_denari_it} (len {len(asso_di_denari_it.state)}): {asso_di_denari_it.state.argmax()}")
     
     # Test equality
-    ace_spades_en_copy = Card(value=1, suit=0, card_system_key='standard_52', language='en')
-    print(f"Equality (same system, same card): {ace_of_spades_en == ace_spades_en_copy}") # Expected: True
-    print(f"Equality (different system): {ace_of_spades_en == asso_di_denari_it}") # Expected: False
+    asso_denari_it_copy = Card(value=1, suit=0, language='it')
+    print(f"Equality (same card): {asso_di_denari_it == asso_denari_it_copy}")
     
     # Test comparison
-    king_of_hearts_std = Card(value=13, suit=1, card_system_key='standard_52', language='en')
-    print(f"{ace_of_spades_en} < {king_of_hearts_std}: {ace_of_spades_en < king_of_hearts_std}") # Expected: True
+    re_di_coppe_it = Card(value=10, suit=1, language='it')
+    print(f"{asso_di_denari_it} < {re_di_coppe_it}: {asso_di_denari_it < re_di_coppe_it}")
 
     # Example of language fallback warning
     print("\nTesting language fallback:")
-    card_de_fallback_suits = Card(value=1, suit=0, card_system_key='italian_40', language='de') # German ('de') not in italian_40 suits/specials
-    # Expect warnings to be printed here from __init__
-    print(f"German (fallback for Italian system card): {card_de_fallback_suits}") # String output will use fallback language names
+    card_de_fallback_suits = Card(value=1, suit=0, language='de') # German ('de') not in italian_40 suits/specials
+    print(f"German (fallback for Italian system card): {card_de_fallback_suits}")
 
     # Test invalid card scenarios
     print("\nTesting invalid card scenarios:")
     try:
-        invalid_card_value = Card(value=15, suit=0, card_system_key='standard_52') # 15 is not in standard_52 values_map
+        invalid_card_value = Card(value=15, suit=0) # 15 is not in italian_40 values_map
     except ValueError as e:
         print(f"Error for invalid card value: {e}")
 
     try:
-        invalid_suit_index = Card(value=1, suit=4, card_system_key='standard_52') # Standard deck has 4 suits (indices 0-3)
+        invalid_suit_index = Card(value=1, suit=4) # Italian deck has 4 suits (indices 0-3)
     except ValueError as e:
         print(f"Error for invalid suit index: {e}")
 
-    try:
-        invalid_system_key = Card(value=1, suit=0, card_system_key='non_existent_system')
-    except ValueError as e:
-        print(f"Error for invalid system key: {e}")
+    # The test for 'non_existent_system' is no longer applicable as card_system_key is hardcoded.
+    # try:
+    #     invalid_system_key = Card(value=1, suit=0, card_system_key='non_existent_system')
+    # except ValueError as e:
+    #     print(f"Error for invalid system key: {e}")
 
     # Detailed index calculation check for Italian deck
     print("\nDetailed index calculation for Italian deck:")
-    # Denari (suit 0): values 1-10 -> indices 0-9
-    # Coppe (suit 1): values 1-10 -> indices 10-19
-    # Spade (suit 2): values 1-10 -> indices 20-29
-    # Bastoni (suit 3): values 1-10 -> indices 30-39
-    re_di_bastoni = Card(value=10, suit=3, card_system_key='italian_40', language='it') # Re (value 10) di Bastoni (suit 3)
-    # values_map.index(10) = 9. Index = 9 + 3 * 10 = 39.
-    print(f"{re_di_bastoni} (Index: {re_di_bastoni.calculate_index()})") # Expected: Re di Bastoni, Index: 39
+    re_di_bastoni = Card(value=10, suit=3, language='it') # Re (value 10) di Bastoni (suit 3)
+    print(f"{re_di_bastoni} (Index: {re_di_bastoni.calculate_index()})")
 
-    asso_di_coppe = Card(value=1, suit=1, card_system_key='italian_40', language='it') # Asso (value 1) di Coppe (suit 1)
-    # values_map.index(1) = 0. Index = 0 + 1 * 10 = 10.
-    print(f"{asso_di_coppe} (Index: {asso_di_coppe.calculate_index()})") # Expected: Asso di Coppe, Index: 10
-```
+    asso_di_coppe = Card(value=1, suit=1, language='it') # Asso (value 1) di Coppe (suit 1)
+    print(f"{asso_di_coppe} (Index: {asso_di_coppe.calculate_index()})")
