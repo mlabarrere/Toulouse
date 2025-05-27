@@ -4,12 +4,10 @@ from typing import List
 from toulouse.cards import Card, SUITS, VALUES, DECK_SIZE
 
 class Deck:
-    def __init__(self, new: bool = True, shuffle: bool = False):
-        self.cards: List[Card] = []
-        if new:
-            self.cards = [Card(value=v, suit=s) for s in range(len(SUITS)) for v in VALUES]
-            if shuffle:
-                random.shuffle(self.cards)
+    def __init__(self, shuffle: bool = False):
+        self.cards = [Card(value=v, suit=s) for s in range(len(SUITS)) for v in VALUES]
+        if shuffle:
+            random.shuffle(self.cards)
 
     def draw(self, n: int = 1) -> List[Card]:
         drawn = self.cards[:n]
