@@ -56,4 +56,4 @@ class Card(BaseModel):
         return f"{value_str} of {suit_str}" if self.language == "en" else f"{value_str} di {suit_str}"
 
     def __repr__(self) -> str:
-        return f"Card(value={self.value}, suit={self.suit}, system='{self.card_system_key}', lang='{self.language}')"
+        return f"Card(value={self.value}, suit={self.suit}')"
