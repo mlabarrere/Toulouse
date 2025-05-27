@@ -1,32 +1,59 @@
-from dataclasses import dataclass
+"""
+Card class for Toulouse – strong, elegant, and not afraid of being one-hot.
+"""
+from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import ValidationInfo
 import numpy as np
+from .systems import get_card_system
 
-# Constants for Italian 40-card system
-SUITS = ["Denari", "Coppe", "Spade", "Bastoni"]
-VALUES = list(range(1, 11))  # 1–10: 1-7, 8=Fante, 9=Cavallo, 10=Re
-DECK_SIZE = len(SUITS) * len(VALUES)
+class Card(BaseModel):
+    value: int
+    suit: int  # 0-based
+    card_system_key: str = "italian_40"
+    language: str = "en"
 
-@dataclass(frozen=True)
-class Card:
-    value: int  # 1 to 10
-    suit: int   # 0 to 3 (index in SUITS)
+    model_config = {
+        "frozen": True  # replaces class Config: frozen = True
+    }
 
-    def __post_init__(self):
-        if self.value not in VALUES:
-            raise ValueError(f"Invalid value: {self.value}")
-        if not (0 <= self.suit < len(SUITS)):
-            raise ValueError(f"Invalid suit index: {self.suit}")
+    @field_validator("value")
+    @classmethod
+    def check_value(cls, v, info: ValidationInfo):
+        card_system_key = info.data.get("card_system_key", "italian_40")
+        system = get_card_system(card_system_key)
+        if v not in system["values"]:
+            raise ValueError(f"Value {v} not in allowed values for this system: {system['values']}")
+        return v
+
+    @field_validator("suit")
+    @classmethod
+    def check_suit(cls, v, info: ValidationInfo):
+        card_system_key = info.data.get("card_system_key", "italian_40")
+        system = get_card_system(card_system_key)
+        if not (0 <= v < len(system["suits"])):
+            raise ValueError(f"Suit {v} out of range for system suits: {system['suits']}")
+        return v
 
     def to_index(self) -> int:
-        return self.suit * len(VALUES) + (self.value - 1)
+        """Get canonical index of the card (for one-hot)."""
+        system = get_card_system(self.card_system_key)
+        idx = self.suit * len(system["values"]) + (self.value - min(system["values"]))
+        return idx
 
-    def to_array(self) -> np.ndarray:
-        arr = np.zeros(DECK_SIZE, dtype=np.uint8)
+    @property
+    def state(self) -> np.ndarray:
+        """One-hot numpy array for ML/RL."""
+        system = get_card_system(self.card_system_key)
+        arr = np.zeros(system["deck_size"], dtype=np.uint8)
         arr[self.to_index()] = 1
         return arr
 
-    def __str__(self):
-        return f"{self.value} di {SUITS[self.suit]}"
+    def __str__(self) -> str:
+        system = get_card_system(self.card_system_key)
+        names = system["names"].get(self.language, system["names"]["en"])
+        value_str = names.get(self.value, str(self.value))
+        suit_str = system["suits"][self.suit]
+        return f"{value_str} of {suit_str}" if self.language == "en" else f"{value_str} di {suit_str}"
 
-    def __repr__(self):
-        return f"Card(value={self.value}, suit={self.suit})"
+    def __repr__(self) -> str:
+        return f"Card(value={self.value}, suit={self.suit}, system='{self.card_system_key}', lang='{self.language}')"

@@ -1,1 +1,9 @@
-numpy
+# Minimal and recommended for Toulouse
+
+numpy>=1.20
+pydantic>=2.1
+
+# For CLI tool examples (optional, not used in core)
+
+typer>=0.9
+pytest  # For running the test suite (dev only)

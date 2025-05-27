@@ -1,4 +1,56 @@
+# Python stuff
 
-*.pyc
+**pycache**/
+\*.pyc
+\*.pyo
+\*.pyd
+\*.py\[co]
+\*.so
+
+# Environments
+
+.env
+.venv/
+venv/
+env/
+
+# macOS, Windows, Linux trash
+
+.DS\_Store
+Thumbs.db
+\*.swp
+
+# Test/coverage/artifacts
+
+.coverage
+.cache/
+dist/
+build/
+.eggs/
+\*.egg-info/
+htmlcov/
+
+# Pytest stuff
+
+.pytest\_cache/
+__pycache__/
+.pytest_cache/
+
+
+# IDEs
+
+.idea/
 .vscode/
-.DS_Store
+
+# Jupyter notebooks (if ever)
+
+.ipynb\_checkpoints/
+
+# Packaging artifacts
+
+\*.log
+
+# Misc
+
+\*.orig
+\*.bak
