@@ -33,7 +33,7 @@ def test_remove_and_contains():
 
 def test_move_card_to():
     deck1 = Deck()
-    deck2 = Deck(new=False)
+    deck2 = Deck()
     card = deck1.cards[5]
     deck1.move_card_to(card, deck2)
     assert card in deck2.cards
