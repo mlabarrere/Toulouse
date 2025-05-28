@@ -27,4 +27,4 @@ classifiers = [
 ]
 
 [tool.setuptools]
-packages = [""]
+py-modules = ["toulouse"]
