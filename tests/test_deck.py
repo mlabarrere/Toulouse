@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from toulouse.cards import Card
+from toulouse import Card
+
 
 # --- Test valid card creation and core properties ---
 def test_card_creation_valid():
@@ -19,6 +20,7 @@ def test_card_creation_valid():
     assert arr[0] == 1
     assert arr.shape == (40,)
 
+
 # --- Test string representation in different languages ---
 def test_card_creation_other_language():
     """
@@ -34,6 +36,7 @@ def test_card_creation_other_language():
     card_en = Card(value=1, suit=0, language="en")
     assert str(card_en).startswith("Ace")
 
+
 # --- Test __repr__, equality, hashability ---
 def test_card_repr_and_hash():
     """Check __repr__, equality, and hashability (should behave like a value object)."""
@@ -42,7 +45,8 @@ def test_card_repr_and_hash():
     assert card1 == card2
     assert hash(card1) == hash(card2)
     r = repr(card1)
-    assert "value=7" in r and "suit=2" in r 
+    assert "value=7" in r and "suit=2" in r
+
 
 # --- Test creation with invalid value or suit ---
 def test_card_creation_invalid_value():
@@ -52,12 +56,14 @@ def test_card_creation_invalid_value():
     with pytest.raises(ValueError):
         Card(value=0, suit=1)
 
+
 def test_card_creation_invalid_suit():
     """Creating a card with an invalid suit should raise ValueError."""
     with pytest.raises(ValueError):
         Card(value=2, suit=44)
     with pytest.raises(ValueError):
         Card(value=2, suit=-1)
+
 
 # --- Test to_index covers all ---
 def test_card_to_index_bounds():
@@ -72,6 +78,7 @@ def test_card_to_index_bounds():
             seen.add(idx)
     assert len(seen) == 40  # Must fill all slots
 
+
 # --- Test state is always a one-hot ---
 def test_card_state_is_onehot():
     """Card state is always a one-hot vector with one '1' at the card's index."""
@@ -83,11 +90,13 @@ def test_card_state_is_onehot():
             assert arr[card.to_index()] == 1
             assert arr.dtype == np.uint8
 
+
 # --- Fallback for unknown language ---
 def test_card_str_unknown_language_fallback():
     """If an unknown language is given, should fallback to English names."""
     card = Card(value=1, suit=0, language="elvish")
     assert "Ace" in str(card) or "1" in str(card)  # fallback to English or numeric
+
 
 # --- Variant system (example) ---
 def test_card_system_variants():
@@ -99,6 +108,7 @@ def test_card_system_variants():
     except KeyError:
         pass  # System not present, skip
 
+
 # --- Immutability ---
 def test_card_immutability():
     """
@@ -107,5 +117,6 @@ def test_card_immutability():
     """
     card = Card(value=2, suit=1)
     import pydantic
+
     with pytest.raises(pydantic.ValidationError):
         card.value = 3

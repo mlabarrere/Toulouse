@@ -23,8 +23,7 @@ pip install toulouse
 ## ✨ Quick Start
 
 ```python
-from toulouse.cards import Card
-from toulouse.deck import Deck
+from toulouse import Card, Deck
 
 # Create a single card (Ace of Coins, Italian deck)
 card = Card(value=1, suit=0, card_system_key="italian_40", language="it")
@@ -62,7 +61,7 @@ Languages for value names: English, Italian, French, Spanish, German.
 ## 🏗️ Extending: Add Your Own Card System
 
 ```python
-from toulouse.systems import register_card_system
+from toulouse import register_card_system
 
 my_system = {
     "suits": ["Red", "Blue"],
@@ -72,7 +71,7 @@ my_system = {
 }
 register_card_system("mini_6", my_system)
 
-from toulouse.deck import Deck
+from toulouse import Deck
 mini_deck = Deck(new=True, card_system_key="mini_6")
 print(mini_deck)
 ```
