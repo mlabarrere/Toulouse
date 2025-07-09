@@ -1,30 +1,13 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "toulouse"
-version = "0.10.0"
-description = "A modular, multi-language, ML-friendly 40-card playing cards framework."
+version = "1.0.0"
+description = "High-performance card library for ML and RL applications."
 readme = "README.md"
 requires-python = ">=3.9"
-license = {file = "LICENSE"}
-authors = [
-  {name = "mlabarrere"}
-]
 dependencies = [
-  "numpy>=1.20",
-  "pydantic>=1.10",
-  "typer>=0.9"
-]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Developers",
-    "Topic :: Games/Entertainment :: Board Games",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "numpy>=1.20",
 ]
 
-[tool.setuptools]
-py-modules = ["toulouse"]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
