@@ -22,7 +22,7 @@ jobs:
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        uv pip install --system pylint
+        uv add pylint
     - name: Analysing the code with pylint
       run: |
         uv run -m pylint $(git ls-files '*.py')

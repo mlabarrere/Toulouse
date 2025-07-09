@@ -32,7 +32,7 @@ jobs:
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        uv pip install --system build
+        uv add build
     - name: Build package
       run: uv run -m build
     - name: Publish package
