@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Mickaël Labarrère", email = "mickael.labarrere@gmail.com"}
+  {name = "mlabarrere"}
 ]
 dependencies = [
   "numpy>=1.20",
