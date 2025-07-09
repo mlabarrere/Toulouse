@@ -103,6 +103,7 @@ def test_card_system_variants():
 
 # --- Usage and Performance Demonstration ---
 
+
 def test_performance_deck_creation():
     """Benchmark deck creation and reset."""
     t0 = time.perf_counter()
@@ -110,7 +111,7 @@ def test_performance_deck_creation():
         deck = Deck.new_deck()
     t1 = time.perf_counter()
     print(f"Deck creation (1000x): {t1-t0:.6f} seconds")
-    assert (t1-t0) < 1.0  # Should be very fast
+    assert (t1 - t0) < 1.0  # Should be very fast
 
 
 def test_performance_shuffle_draw():
@@ -123,7 +124,7 @@ def test_performance_shuffle_draw():
         deck.reset()
     t1 = time.perf_counter()
     print(f"Shuffle+draw+reset (1000x): {t1-t0:.6f} seconds")
-    assert (t1-t0) < 2.0
+    assert (t1 - t0) < 2.0
 
 
 def test_performance_card_lookup():
@@ -135,7 +136,7 @@ def test_performance_card_lookup():
         _ = deck.contains(card)
     t1 = time.perf_counter()
     print(f"Card lookup (10000x): {t1-t0:.6f} seconds")
-    assert (t1-t0) < 0.5
+    assert (t1 - t0) < 0.5
 
 
 def test_performance_state_vector():
@@ -148,4 +149,4 @@ def test_performance_state_vector():
         _ = card.state
     t1 = time.perf_counter()
     print(f"State vectorization (deck+card, 10000x): {t1-t0:.6f} seconds")
-    assert (t1-t0) < 1.0
+    assert (t1 - t0) < 1.0
