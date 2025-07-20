@@ -149,13 +149,16 @@ class Card:
         arr[self.to_index()] = 1
         return arr
 
-    def __str__(self) -> str:
+    def to_string(self, language: str = "it") -> str:
         system = get_card_system(self.card_system_key)
-        names = _load_names_for_system(self.card_system_key, "en")
+        names = _load_names_for_system(self.card_system_key, language)
         value_str = names.get(self.value, str(self.value))
         suit_str = system["suits"][self.suit]
-        return f"{value_str} of {suit_str}"
-
+        return f"{value_str} di {suit_str}" # Modifié pour "di" et ordre italien
+    
+    def __str__(self) -> str:
+        return self.to_string(language="it") # Appelle la nouvelle méthode avec la langue par défaut
+    
     def __repr__(self) -> str:
         return f"Card(value={self.value}, suit={self.suit})"
 
