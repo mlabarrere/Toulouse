@@ -1,6 +1,6 @@
 [project]
 name = "toulouse"
-version = "1.0.1"
+version = "1.1.0"
 description = "High-performance card library for ML and RL applications."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -31,6 +31,11 @@ Homepage = "https://github.com/yourusername/toulouse"
 Repository = "https://github.com/yourusername/toulouse"
 Documentation = "https://github.com/yourusername/toulouse#readme"
 "Bug Tracker" = "https://github.com/yourusername/toulouse/issues"
+
+[project.optional-dependencies]
+dev = [
+    "bump2version>=0.6.0",
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
