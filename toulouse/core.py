@@ -237,3 +237,16 @@ class Deck:
         deck._card_set = set(cards)
         deck._state_dirty = True
         return deck
+
+    def copy(self) -> "Deck":
+        """
+        Retourne une copie superficielle (shallow copy) du Deck.
+        Optimisé pour la performance en réutilisant les objets Card immuables.
+        """
+        new_deck = Deck(card_system_key=self.card_system_key, language=self.language)
+        new_deck._cards = self._cards[:]
+        new_deck._card_set = self._card_set.copy()
+        
+        new_deck._state_cache = self._state_cache.copy() if self._state_cache is not None else None
+        new_deck._state_dirty = self._state_dirty
+        return new_deck
