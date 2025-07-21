@@ -25,72 +25,21 @@ from typing import Any, Iterator, Optional, Dict, List, Set
 from dataclasses import dataclass, field
 from functools import lru_cache
 import weakref
+from toulouse.i18n import get_translation
 
-_CARD_SYSTEMS: Dict[str, Dict[str, Any]] = {}
-
-_CARD_SYSTEMS["italian_40"] = {
-    "suits": ["Denari", "Coppe", "Spade", "Bastoni"],
-    "values": list(range(1, 11)),
-    "deck_size": 40,
-    "_names": None,
+# Card system configurations
+_CARD_SYSTEMS: Dict[str, Dict[str, Any]] = {
+    "italian_40": {
+        "suits": ["Denari", "Coppe", "Spade", "Bastoni"],
+        "values": list(range(1, 11)),
+        "deck_size": 40,
+    },
+    "spanish_40": {
+        "suits": ["Oros", "Copas", "Espadas", "Bastos"],
+        "values": list(range(1, 11)),
+        "deck_size": 40,
+    },
 }
-
-_CARD_SYSTEMS["spanish_40"] = {
-    "suits": ["Oros", "Copas", "Espadas", "Bastos"],
-    "values": list(range(1, 11)),
-    "deck_size": 40,
-    "_names": None,
-}
-
-_NAMES_CACHE: Dict[str, Dict[int, str]] = {}
-
-
-def _load_names_for_system(system_key: str, language: str) -> Dict[int, str]:
-    cache_key = f"{system_key}_{language}"
-    if cache_key not in _NAMES_CACHE:
-        if system_key == "italian_40":
-            if language == "en":
-                _NAMES_CACHE[cache_key] = {
-                    1: "Ace",
-                    2: "Two",
-                    3: "Three",
-                    4: "Four",
-                    5: "Five",
-                    6: "Six",
-                    7: "Seven",
-                    8: "Jack",
-                    9: "Knight",
-                    10: "King",
-                }
-            elif language == "it":
-                _NAMES_CACHE[cache_key] = {
-                    1: "Asso",
-                    2: "Due",
-                    3: "Tre",
-                    4: "Quattro",
-                    5: "Cinque",
-                    6: "Sei",
-                    7: "Sette",
-                    8: "Fante",
-                    9: "Cavallo",
-                    10: "Re",
-                }
-        elif system_key == "spanish_40":
-            if language == "es":
-                _NAMES_CACHE[cache_key] = {
-                    1: "As",
-                    2: "Dos",
-                    3: "Tres",
-                    4: "Cuatro",
-                    5: "Cinco",
-                    6: "Seis",
-                    7: "Siete",
-                    8: "Sota",
-                    9: "Caballo",
-                    10: "Rey",
-                }
-    return _NAMES_CACHE.get(cache_key, {})
-
 
 @lru_cache(maxsize=32)
 def get_card_system(key: str) -> Dict[str, Any]:
@@ -108,6 +57,7 @@ def register_card_system(key: str, config: Dict[str, Any]):
     _CARD_SYSTEMS[key] = config.copy()
 
 
+# Object pooling for Card instances
 _CARD_POOL: Dict[tuple, "Card"] = {}
 _CARD_POOL_CLEANUP = weakref.WeakSet()
 
@@ -129,18 +79,13 @@ class Card:
     def __post_init__(self):
         system = get_card_system(self.card_system_key)
         if self.value not in system["values"]:
-            raise ValueError(
-                f"Value {self.value} not in allowed values: {system['values']}"
-            )
+            raise ValueError(f"Value {self.value} not in allowed values: {system['values']}")
         if not (0 <= self.suit < len(system["suits"])):
-            raise ValueError(
-                f"Suit {self.suit} out of range for system suits: {system['suits']}"
-            )
+            raise ValueError(f"Suit {self.suit} out of range for system suits: {system['suits']}")
 
     def to_index(self) -> int:
         system = get_card_system(self.card_system_key)
-        idx = self.suit * len(system["values"]) + (self.value - min(system["values"]))
-        return idx
+        return self.suit * len(system["values"]) + (self.value - min(system["values"]))
 
     @property
     def state(self) -> np.ndarray:
@@ -150,23 +95,23 @@ class Card:
         return arr
 
     def to_string(self, language: str = "it") -> str:
-        system = get_card_system(self.card_system_key)
-        names = _load_names_for_system(self.card_system_key, language)
-        value_str = names.get(self.value, str(self.value))
-        suit_str = system["suits"][self.suit]
-        return f"{value_str} di {suit_str}" # Modifié pour "di" et ordre italien
-    
+        translations = get_translation(language, self.card_system_key)
+        value_str = translations["values"].get(self.value, str(self.value))
+        suit_str = translations["suits"][self.suit]
+        connector = translations["connector"]
+        return f"{value_str} {connector} {suit_str}"
+
     def __str__(self) -> str:
-        return self.to_string(language="it") # Appelle la nouvelle méthode avec la langue par défaut
-    
+        return self.to_string()
+
     def __repr__(self) -> str:
-        return f"Card(value={self.value}, suit={self.suit})"
+        return f"Card(value={self.value}, suit={self.suit}, system='{self.card_system_key}')"
 
 
 @dataclass
 class Deck:
     card_system_key: str = "italian_40"
-    language: str = "en"
+    language: str = "it"
     _cards: List[Card] = field(default_factory=list)
     _card_set: Set[Card] = field(default_factory=set)
     _state_cache: Optional[np.ndarray] = None
@@ -196,12 +141,17 @@ class Deck:
         return f"Deck(cards=[{preview}, ...], system='{self.card_system_key}')"
 
     def pretty_print(self) -> str:
-        system = get_card_system(self.card_system_key)
+        translations = get_translation(self.language, self.card_system_key)
         lines = []
-        for suit_idx, suit in enumerate(system["suits"]):
-            suit_cards = [card for card in self._cards if card.suit == suit_idx]
-            suit_str = ", ".join(str(card) for card in suit_cards)
-            lines.append(f"{suit}: {suit_str}")
+        for suit_idx, suit_name in enumerate(translations["suits"]):
+            # Filter cards for the current suit and sort them by value
+            suit_cards = sorted(
+                [card for card in self._cards if card.suit == suit_idx],
+                key=lambda c: c.value
+            )
+            # Get translated card names
+            card_names = [card.to_string(self.language) for card in suit_cards]
+            lines.append(f"{suit_name}: {', '.join(card_names)}")
         return "\n".join(lines)
 
     def draw(self, n: int = 1) -> List[Card]:
@@ -266,7 +216,7 @@ class Deck:
     def new_deck(
         cls,
         card_system_key: str = "italian_40",
-        language: str = "en",
+        language: str = "it",
         sorted_deck: bool = True,
     ) -> "Deck":
         deck = cls(card_system_key=card_system_key, language=language)
@@ -280,7 +230,7 @@ class Deck:
         cls,
         cards: List[Card],
         card_system_key: str = "italian_40",
-        language: str = "en",
+        language: str = "it",
     ) -> "Deck":
         deck = cls(card_system_key=card_system_key, language=language)
         deck._cards = list(cards)
