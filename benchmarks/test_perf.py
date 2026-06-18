@@ -9,7 +9,7 @@ loops: state vectorisation, drawing, deck cloning and membership checks.
 
 import pytest
 
-from toulouse import Card, Deck, get_card
+from toulouse import Deck, get_card
 
 
 @pytest.fixture

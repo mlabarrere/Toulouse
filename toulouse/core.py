@@ -20,11 +20,13 @@ Usage:
 """
 
 import random
-import numpy as np
+import weakref
 from typing import Any, Iterator, Optional, Dict, List, Set
 from dataclasses import dataclass, field
 from functools import lru_cache
-import weakref
+
+import numpy as np
+
 from toulouse.i18n import get_translation
 
 # Card system configurations
@@ -84,7 +86,7 @@ class Card:
         system = get_card_system(self.card_system_key)
         if self.value not in system["values"]:
             raise ValueError(f"Value {self.value} not in allowed values: {system['values']}")
-        if not (0 <= self.suit < len(system["suits"])):
+        if not 0 <= self.suit < len(system["suits"]):
             raise ValueError(f"Suit {self.suit} out of range for system suits: {system['suits']}")
         # Precompute the deterministic index and one-hot state once. The Card is
         # frozen, so we must bypass the assignment guard via object.__setattr__.
@@ -222,7 +224,7 @@ class Deck:
         if self._state_dirty or self._state_cache is None:
             arr = np.zeros(self._deck_size, dtype=np.uint8)
             for card in self._cards:
-                arr[card._index] = 1
+                arr[card.to_index()] = 1
             arr.flags.writeable = False  # safe to share without copying
             self._state_cache = arr
             self._state_dirty = False
@@ -263,6 +265,7 @@ class Deck:
         Retourne une copie superficielle (shallow copy) du Deck.
         Optimisé pour la performance en réutilisant les objets Card immuables.
         """
+        # pylint: disable=protected-access  # copy constructor: same-class internals
         new_deck = Deck(card_system_key=self.card_system_key, language=self.language)
         new_deck._cards = self._cards[:]
         new_deck._card_set = self._card_set.copy()
