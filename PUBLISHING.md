@@ -18,25 +18,20 @@ Ce guide explique comment publier le package `toulouse` sur PyPI en utilisant `u
 4. Nommez-le `pypi`
 5. Cliquez sur **Configure environment**
 
-### 2. Configurer PyPI
+### 2. Ajouter le Trusted Publisher sur PyPI
 
-1. Allez sur [PyPI](https://pypi.org/manage/account/)
-2. Cliquez sur **API tokens** dans le menu de gauche
-3. Cliquez sur **Add API token**
-4. Sélectionnez **Entire account (all projects)**
-5. Copiez le token généré
+Le Trusted Publishing (OIDC) ne nécessite **aucun token API** : l'authentification se fait
+automatiquement entre GitHub Actions et PyPI.
 
-### 3. Ajouter le Trusted Publisher
-
-1. Sur PyPI, allez dans **Account settings** → **Trusted publishers**
-2. Cliquez sur **Add**
-3. Remplissez les informations :
-   - **Publisher name** : `toulouse-publisher`
-   - **Owner** : `votre-username-github`
-   - **Repository name** : `toulouse`
-   - **Workflow name** : `Upload Python Package`
+1. Sur PyPI, allez dans **Account settings** → **Publishing** → **Add a new pending publisher**
+   (ou, pour un projet existant : **Manage** → **Publishing**).
+2. Remplissez les informations exactement :
+   - **PyPI Project Name** : `toulouse`
+   - **Owner** : `mlabarrere`
+   - **Repository name** : `Toulouse`
+   - **Workflow name** : `publish-PyPi.yml`
    - **Environment name** : `pypi`
-4. Cliquez sur **Add trusted publisher**
+3. Cliquez sur **Add**.
 
 ## Test local
 
@@ -57,18 +52,26 @@ uv run --with toulouse --no-project -- python -c "import toulouse; print('Succes
 
 ### Via GitHub Actions (recommandé)
 
-1. Créez un **Release** sur GitHub
-2. Le workflow se déclenche automatiquement
-3. Le package est publié sur PyPI
+Le workflow `.github/workflows/publish-PyPi.yml` se déclenche automatiquement lorsque :
+
+- un **tag** `v*` est poussé (ex. `git tag v1.1.2 && git push origin v1.1.2`), ou
+- une **Release** GitHub est publiée.
+
+Il construit la distribution puis la publie sur PyPI via Trusted Publishing (sans token).
+Pensez d'abord à incrémenter la version :
+
+```bash
+# Met à jour la version dans pyproject.toml, commit et crée le tag
+bump2version patch   # ou minor / major
+git push --follow-tags
+```
 
 ### Via ligne de commande
 
 ```bash
-# Publier directement
+# Construire puis publier (nécessite des identifiants PyPI configurés)
+uv build --no-sources
 uv publish
-
-# Ou avec un token spécifique
-uv publish --token YOUR_TOKEN
 ```
 
 ## Vérification

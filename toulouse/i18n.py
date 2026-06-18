@@ -16,6 +16,7 @@ Structure:
 """
 
 from typing import Dict, Any
+from functools import lru_cache
 
 # Centralized dictionary for all translations
 TRANSLATIONS: Dict[str, Dict[str, Any]] = {
@@ -25,8 +26,10 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
             "spanish_40": ["Golds", "Cups", "Swords", "Clubs"],
         },
         "values": {
-            "italian_40": {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Jack", 9: "Knight", 10: "King"},
-            "spanish_40": {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Sota", 9: "Caballo", 10: "Rey"},
+            "italian_40": {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five",
+                           6: "Six", 7: "Seven", 8: "Jack", 9: "Knight", 10: "King"},
+            "spanish_40": {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five",
+                           6: "Six", 7: "Seven", 8: "Sota", 9: "Caballo", 10: "Rey"},
         },
         "connectors": {"of": "of"},
     },
@@ -36,8 +39,10 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
             "spanish_40": ["Ors", "Coupes", "Épées", "Bâtons"],
         },
         "values": {
-            "italian_40": {1: "As", 2: "Deux", 3: "Trois", 4: "Quatre", 5: "Cinq", 6: "Six", 7: "Sept", 8: "Valet", 9: "Cavalier", 10: "Roi"},
-            "spanish_40": {1: "As", 2: "Deux", 3: "Trois", 4: "Quatre", 5: "Cinq", 6: "Six", 7: "Sept", 8: "Sota", 9: "Caballo", 10: "Rey"},
+            "italian_40": {1: "As", 2: "Deux", 3: "Trois", 4: "Quatre", 5: "Cinq",
+                           6: "Six", 7: "Sept", 8: "Valet", 9: "Cavalier", 10: "Roi"},
+            "spanish_40": {1: "As", 2: "Deux", 3: "Trois", 4: "Quatre", 5: "Cinq",
+                           6: "Six", 7: "Sept", 8: "Sota", 9: "Caballo", 10: "Rey"},
         },
         "connectors": {"of": "de"},
     },
@@ -47,8 +52,10 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
             "spanish_40": ["Oros", "Coppe", "Spade", "Bastoni"],
         },
         "values": {
-            "italian_40": {1: "Asso", 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque", 6: "Sei", 7: "Sette", 8: "Fante", 9: "Cavallo", 10: "Re"},
-            "spanish_40": {1: "As", 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque", 6: "Sei", 7: "Sette", 8: "Sota", 9: "Caballo", 10: "Re"},
+            "italian_40": {1: "Asso", 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque",
+                           6: "Sei", 7: "Sette", 8: "Fante", 9: "Cavallo", 10: "Re"},
+            "spanish_40": {1: "As", 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque",
+                           6: "Sei", 7: "Sette", 8: "Sota", 9: "Caballo", 10: "Re"},
         },
         "connectors": {"of": "di"},
     },
@@ -58,14 +65,17 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
             "spanish_40": ["Oros", "Copas", "Espadas", "Bastos"],
         },
         "values": {
-            "italian_40": {1: "As", 2: "Dos", 3: "Tres", 4: "Cuatro", 5: "Cinco", 6: "Seis", 7: "Siete", 8: "Sota", 9: "Caballo", 10: "Rey"},
-            "spanish_40": {1: "As", 2: "Dos", 3: "Tres", 4: "Cuatro", 5: "Cinco", 6: "Seis", 7: "Siete", 8: "Sota", 9: "Caballo", 10: "Rey"},
+            "italian_40": {1: "As", 2: "Dos", 3: "Tres", 4: "Cuatro", 5: "Cinco",
+                           6: "Seis", 7: "Siete", 8: "Sota", 9: "Caballo", 10: "Rey"},
+            "spanish_40": {1: "As", 2: "Dos", 3: "Tres", 4: "Cuatro", 5: "Cinco",
+                           6: "Seis", 7: "Siete", 8: "Sota", 9: "Caballo", 10: "Rey"},
         },
         "connectors": {"of": "de"},
     },
 }
 
 
+@lru_cache(maxsize=64)
 def get_translation(language: str, card_system: str) -> Dict[str, Any]:
     """
     Retrieves translation data for a given language and card system.
@@ -77,9 +87,12 @@ def get_translation(language: str, card_system: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing "suits", "values", and "connector" strings.
         Falls back to English if the requested language is not found.
+
+    Note:
+        Results are cached (read-only use intended); do not mutate the returned dict.
     """
     lang_data = TRANSLATIONS.get(language, TRANSLATIONS["en"])
-    
+
     return {
         "suits": lang_data["suits"].get(card_system, {}),
         "values": lang_data["values"].get(card_system, {}),

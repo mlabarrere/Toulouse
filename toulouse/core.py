@@ -20,11 +20,13 @@ Usage:
 """
 
 import random
-import numpy as np
+import weakref
 from typing import Any, Iterator, Optional, Dict, List, Set
 from dataclasses import dataclass, field
 from functools import lru_cache
-import weakref
+
+import numpy as np
+
 from toulouse.i18n import get_translation
 
 # Card system configurations
@@ -75,24 +77,37 @@ class Card:
     value: int
     suit: int
     card_system_key: str = "italian_40"
+    # Precomputed, derived fields. Excluded from equality/repr so a Card's
+    # identity stays (value, suit, card_system_key). Populated in __post_init__.
+    _index: int = field(default=-1, compare=False, repr=False)
+    _state: Optional[np.ndarray] = field(default=None, compare=False, repr=False)
 
     def __post_init__(self):
         system = get_card_system(self.card_system_key)
         if self.value not in system["values"]:
             raise ValueError(f"Value {self.value} not in allowed values: {system['values']}")
-        if not (0 <= self.suit < len(system["suits"])):
+        if not 0 <= self.suit < len(system["suits"]):
             raise ValueError(f"Suit {self.suit} out of range for system suits: {system['suits']}")
+        # Precompute the deterministic index and one-hot state once. The Card is
+        # frozen, so we must bypass the assignment guard via object.__setattr__.
+        index = self.suit * len(system["values"]) + (self.value - min(system["values"]))
+        arr = np.zeros(system["deck_size"], dtype=np.uint8)
+        arr[index] = 1
+        arr.flags.writeable = False  # read-only: safe to share without copying
+        object.__setattr__(self, "_index", index)
+        object.__setattr__(self, "_state", arr)
 
     def to_index(self) -> int:
-        system = get_card_system(self.card_system_key)
-        return self.suit * len(system["values"]) + (self.value - min(system["values"]))
+        return self._index
 
     @property
     def state(self) -> np.ndarray:
-        system = get_card_system(self.card_system_key)
-        arr = np.zeros(system["deck_size"], dtype=np.uint8)
-        arr[self.to_index()] = 1
-        return arr
+        """Read-only one-hot vector for this card (cached, zero-copy).
+
+        The returned array is not writeable. Callers needing a mutable copy
+        should do ``np.array(card.state)``.
+        """
+        return self._state
 
     def to_string(self, language: str = "it") -> str:
         translations = get_translation(language, self.card_system_key)
@@ -142,14 +157,15 @@ class Deck:
 
     def pretty_print(self) -> str:
         translations = get_translation(self.language, self.card_system_key)
+        suit_names = translations["suits"]
+        # Group cards by suit in a single pass: O(n) instead of O(n * suits).
+        by_suit: Dict[int, List[Card]] = {idx: [] for idx in range(len(suit_names))}
+        for card in self._cards:
+            if card.suit in by_suit:
+                by_suit[card.suit].append(card)
         lines = []
-        for suit_idx, suit_name in enumerate(translations["suits"]):
-            # Filter cards for the current suit and sort them by value
-            suit_cards = sorted(
-                [card for card in self._cards if card.suit == suit_idx],
-                key=lambda c: c.value
-            )
-            # Get translated card names
+        for suit_idx, suit_name in enumerate(suit_names):
+            suit_cards = sorted(by_suit[suit_idx], key=lambda c: c.value)
             card_names = [card.to_string(self.language) for card in suit_cards]
             lines.append(f"{suit_name}: {', '.join(card_names)}")
         return "\n".join(lines)
@@ -157,7 +173,7 @@ class Deck:
     def draw(self, n: int = 1) -> List[Card]:
         n = max(0, min(n, len(self._cards)))
         drawn = self._cards[:n]
-        self._cards = self._cards[n:]
+        del self._cards[:n]  # in-place removal: avoids copying the deck tail
         for card in drawn:
             self._card_set.discard(card)
         self._state_dirty = True
@@ -200,13 +216,19 @@ class Deck:
 
     @property
     def state(self) -> np.ndarray:
+        """Read-only binary vector of the deck composition (cached, zero-copy).
+
+        Recomputed only when the deck changed. The returned array is not
+        writeable; use ``np.array(deck.state)`` for a mutable copy.
+        """
         if self._state_dirty or self._state_cache is None:
             arr = np.zeros(self._deck_size, dtype=np.uint8)
             for card in self._cards:
                 arr[card.to_index()] = 1
+            arr.flags.writeable = False  # safe to share without copying
             self._state_cache = arr
             self._state_dirty = False
-        return self._state_cache.copy()
+        return self._state_cache
 
     def move_card_to(self, card: Card, other_deck: "Deck"):
         self.remove(card)
@@ -243,10 +265,13 @@ class Deck:
         Retourne une copie superficielle (shallow copy) du Deck.
         Optimisé pour la performance en réutilisant les objets Card immuables.
         """
+        # pylint: disable=protected-access  # copy constructor: same-class internals
         new_deck = Deck(card_system_key=self.card_system_key, language=self.language)
         new_deck._cards = self._cards[:]
         new_deck._card_set = self._card_set.copy()
-        
-        new_deck._state_cache = self._state_cache.copy() if self._state_cache is not None else None
+        # The cached state is read-only and is never mutated in place (any deck
+        # mutation sets _state_dirty and rebuilds a fresh array). Sharing the
+        # reference is therefore copy-on-write safe and avoids an O(n) copy.
+        new_deck._state_cache = self._state_cache
         new_deck._state_dirty = self._state_dirty
         return new_deck

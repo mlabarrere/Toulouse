@@ -1,40 +1,65 @@
 [project]
 name = "toulouse"
-version = "1.1.1"
-description = "High-performance card library for ML and RL applications."
+version = "1.2.0"
+description = "High-performance Python card-game engine for reinforcement learning (RL), MCTS, and ML — fast NumPy state vectorization, zero-copy observations, and object pooling."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "mlabarrere", email = "micky@poloche.fr"}
 ]
-keywords = ["cards", "game", "reinforcement-learning", "mcts", "numpy"]
+maintainers = [
+    {name = "mlabarrere", email = "micky@poloche.fr"}
+]
+keywords = [
+    "cards",
+    "card-game",
+    "game",
+    "reinforcement-learning",
+    "rl",
+    "mcts",
+    "monte-carlo-tree-search",
+    "machine-learning",
+    "numpy",
+    "simulation",
+    "gym",
+    "environment",
+    "vectorization",
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Games/Entertainment",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 dependencies = [
-    "build>=1.2.2.post1",
     "numpy>=1.20",
-    "pytest>=8.4.1",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/toulouse"
-Repository = "https://github.com/yourusername/toulouse"
-Documentation = "https://github.com/yourusername/toulouse#readme"
-"Bug Tracker" = "https://github.com/yourusername/toulouse/issues"
+Homepage = "https://github.com/mlabarrere/Toulouse"
+Repository = "https://github.com/mlabarrere/Toulouse"
+Documentation = "https://github.com/mlabarrere/Toulouse#readme"
+"Bug Tracker" = "https://github.com/mlabarrere/Toulouse/issues"
+Changelog = "https://github.com/mlabarrere/Toulouse/releases"
 
 [project.optional-dependencies]
 dev = [
     "bump2version>=0.6.0",
+    "pytest>=8.4.1",
+    "pytest-benchmark>=4.0.0",
+    "build>=1.2.2.post1",
+    "pylint>=3.0",
 ]
 
 [build-system]
@@ -46,4 +71,21 @@ where = ["."]
 include = ["toulouse*"]
 
 [tool.setuptools.package-data]
-toulouse = ["*.py"]
+toulouse = ["*.py", "py.typed"]
+
+[tool.pytest.ini_options]
+# Default `pytest` run covers the unit tests only. The benchmark suite is opt-in:
+#   uv run --extra dev -m pytest benchmarks/ --benchmark-only
+testpaths = ["tests"]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-few-public-methods",
+    "redefined-outer-name",
+]
