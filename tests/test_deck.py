@@ -85,3 +85,65 @@ def test_deck_pretty_print_languages():
     output_en = deck_en.pretty_print()
     assert "Coins: Ace of Coins, Two of Coins" in output_en
     assert "Cups: Ace of Cups" in output_en
+
+# --- Test Zero-Copy State Vectors (read-only contract) ---
+
+def test_card_state_is_readonly():
+    """Card.state returns a cached, non-writeable view."""
+    card = get_card(value=3, suit=1)
+    arr = card.state
+    assert arr.flags.writeable is False
+    # Repeated access returns the same cached object (zero allocation).
+    assert card.state is arr
+    with pytest.raises(ValueError):
+        arr[0] = 1
+
+
+def test_deck_state_is_readonly_and_cached():
+    """Deck.state returns a cached, non-writeable view; identical on cache hit."""
+    deck = Deck.new_deck()
+    arr1 = deck.state
+    assert arr1.flags.writeable is False
+    assert arr1.sum() == 40
+    arr2 = deck.state
+    assert arr2 is arr1  # cache hit: same object, no copy
+    with pytest.raises(ValueError):
+        arr1[0] = 0
+
+
+def test_deck_state_recomputed_after_mutation():
+    """Mutating the deck invalidates the cached state."""
+    deck = Deck.new_deck()
+    before = deck.state
+    assert before.sum() == 40
+    deck.draw(10)
+    after = deck.state
+    assert after is not before  # fresh array, old one untouched
+    assert after.sum() == 30
+    assert before.sum() == 40  # previously returned view is not corrupted
+
+
+def test_copy_is_copy_on_write_safe():
+    """copy() shares the cached state, but mutating either deck is isolated."""
+    original = Deck.new_deck()
+    _ = original.state  # warm cache
+    clone = original.copy()
+    # Mutating the clone must not affect the original's state vector.
+    clone.draw(40)
+    assert clone.state.sum() == 0
+    assert original.state.sum() == 40
+    # And mutating the original after copy must not affect the clone.
+    original2 = Deck.new_deck()
+    _ = original2.state
+    clone2 = original2.copy()
+    original2.draw(40)
+    assert original2.state.sum() == 0
+    assert clone2.state.sum() == 40
+
+
+def test_card_state_mutable_copy_via_np_array():
+    """Callers needing a mutable array can wrap with np.array."""
+    card = get_card(value=1, suit=0)
+    mutable = np.array(card.state)
+    mutable[0] = 0  # should not raise
+    assert card.state[0] == 1  # cached view untouched

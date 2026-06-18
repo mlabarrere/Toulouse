@@ -90,7 +90,7 @@ An immutable, hashable data class representing a single card.
 - `card.value: int`
 - `card.suit: int`
 - `card.to_index() -> int`: Returns the card's unique integer index within its system.
-- `card.state -> np.ndarray`: Returns a one-hot encoded NumPy vector of the card's state.
+- `card.state -> np.ndarray`: Returns a one-hot encoded NumPy vector of the card's state. The array is **cached and read-only** (zero-copy); wrap it with `np.array(card.state)` if you need a mutable copy.
 - `card.to_string(language: str) -> str`: Returns a localised string representation.
 
 ### `Deck` Class
@@ -102,7 +102,7 @@ A mutable container for a collection of `Card` objects.
 - `deck.draw(n: int)`: Removes and returns `n` cards from the top of the deck.
 - `deck.append(card: Card)`: Adds a card to the bottom of the deck.
 - `deck.contains(card: Card) -> bool`: Checks for the presence of a card (O(1) complexity).
-- `deck.state -> np.ndarray`: Returns a binary NumPy vector representing the current state of the deck.
+- `deck.state -> np.ndarray`: Returns a binary NumPy vector representing the current state of the deck. The array is **cached and read-only** (zero-copy on repeated access); wrap it with `np.array(deck.state)` if you need a mutable copy.
 - `deck.shuffle()`: Shuffles the deck in-place.
 - `deck.sort()`: Sorts the deck in-place based on card index.
 - `deck.reset()`: Restores the deck to its full, sorted state.

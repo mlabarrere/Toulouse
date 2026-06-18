@@ -16,6 +16,7 @@ Structure:
 """
 
 from typing import Dict, Any
+from functools import lru_cache
 
 # Centralized dictionary for all translations
 TRANSLATIONS: Dict[str, Dict[str, Any]] = {
@@ -66,6 +67,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
 }
 
 
+@lru_cache(maxsize=64)
 def get_translation(language: str, card_system: str) -> Dict[str, Any]:
     """
     Retrieves translation data for a given language and card system.
@@ -77,6 +79,9 @@ def get_translation(language: str, card_system: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing "suits", "values", and "connector" strings.
         Falls back to English if the requested language is not found.
+
+    Note:
+        Results are cached (read-only use intended); do not mutate the returned dict.
     """
     lang_data = TRANSLATIONS.get(language, TRANSLATIONS["en"])
     
